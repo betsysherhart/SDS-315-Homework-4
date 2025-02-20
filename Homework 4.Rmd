@@ -1,0 +1,261 @@
+---
+title: "SDS 315 Homework 4"
+author:
+- "Elizabeth 'Betsy' Sherhart"
+- "UT EID: eas5778"
+- "[Click here for link to GitHub repository](https://github.com/betsysherhart/SDS-315-Homework-4.git)"
+date: "February 20, 2025"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#call tidyverse and mosaic libraries
+library(tidyverse)
+library(mosaic)
+library(knitr)
+```
+
+# Problem 1 - Iron Bank
+
+## Null hypothesis:
+
+The SEC estimates that the baseline probability that any legal trade will be flagged by their algorithm is 2.4%. The null hypothesis being tested is that over the long run, securities trades from the Iron Bank are flagged at the same 2.4% baseline rate as that of other traders.
+
+## Test statistic:
+
+The test statistic that is used to measure the evidence against the null hypothesis was 70 trades flagged out of 2021 trades.
+
+## Plot of probability distribution:
+
+```{r, echo=FALSE}
+# do simulation 10000 times and store the result.
+sim_SEC = do(100000)*nflip(n=2021, prob=0.024)
+
+# create plot of probability distribution
+ggplot(sim_SEC) + 
+  geom_histogram(aes(x=nflip), binwidth=1) +
+  labs(title="Plot of probability distribution of the test statistic, assuming that the null \nhypothesis is true",
+       x="Simulated test statistcs")
+
+# calculate p-value
+p_value = sum(sim_SEC >= 70)/100000
+```
+
+## p-value:
+
+The p-value for the test statistic of 70 flagged trades in the probability distribution of simulated test statistics is `r p_value`.
+
+## Conclusion:
+
+Since the p-value is between 10\^-6 and 10\^-3, the probability that the test statistic of 70 trades out of 2021 trades will happen under the null hypothesis is very small, which means that the null hypothesis being true is highly unlikely, and the SEC should further investigate the Iron Bank.
+
+# Problem 2 - Health Inspections
+
+## Null hypothesis:
+
+Typically, the Health Department’s data shows that, on average, 3% of all restaurant inspections result in health code violations due to random issues that can occur even in well-managed establishments. The null hypothesis being tested is that on average, Gourmet Bites will be cited for health code violations at the same 3% baseline rate.
+
+## Test statistic:
+
+The test statistic that is used to measure the evidence against the null hypothesis was of the 50 inspections done at Gourmet Bites, 8 resulted in health code violations being reported.
+
+## Plot of probability distribution:
+
+```{r, echo=FALSE}
+# do simulation 10000 times and store the result.
+sim_gourmet_bites = do(100000)*nflip(n=50, prob=0.03)
+
+# create plot of probability distribution
+ggplot(sim_gourmet_bites) + 
+  geom_histogram(aes(x=nflip), binwidth=1) +
+  labs(title="Plot of probability distribution of the test statistic, assuming that the null \nhypothesis is true",
+       x="Simulated test statistcs")
+
+# calculate p-value
+p_value = sum(sim_gourmet_bites >= 8)/100000
+```
+
+## p-value:
+
+The p-value for the test statistic of 8 visits where health code violations were reported out of 50 inspections in the probability distribution of simulated test statistics is `r p_value`.
+
+## Conclusion:
+
+Since the p-value is between 10\^-6 and 10\^-3, the probability that the test statistic of 8 visits where health code violations were reported out of 50 inspections will happen under the null hypothesis is very small, which means that the null hypothesis being true is highly unlikely, and the Health Department should further investigate Gourmet Bites.
+
+# Problem 3 - Evaluating Jury Selection for Bias
+
+## Null hypothesis:
+
+The juries for state court cases are selected through a multi-step process designed to ensure that they represent a fair cross-section of the community. The null hypothesis is that on average, the 20 juries under the judge in question will reflect the counties population meaning their group proportions, with some variation due to variability.
+
+## Test statistic:
+
+The test statistic that is used to measure the evidence against the null hypothesis was of the 240 people on the 20 juries under the judge in question, 85 were from group 1, 56 were from group 2, 59 were from group 3, 27 were from group 4, and 13 were from group 5.
+
+## Plot of probability distribution:
+
+```{r, echo=FALSE}
+# Set the expected and observed group distribution
+expected_distribution = c(group_1 = 0.30, group_2 = 0.25, group_3 = 0.20, group_4 = 0.15, group_5 = 0.10)
+observed_counts =  c(group_1 = 85, group_2 = 56, group_3 = 59, group_4 = 27, group_5 = 13)
+num_people = sum(observed_counts)
+
+# "multinomial sampling" equals sampling from a named set of categories
+
+simulated_counts = rmultinom(1, num_people, expected_distribution)
+
+# Define a function to calculate the chi-squared statistic
+chi_squared_statistic = function(observed, expected) {
+  sum((observed - expected)^2 / expected)
+}
+
+chi2 = chi_squared_statistic(simulated_counts, num_people*expected_distribution)
+
+# Let's repeat this:
+num_simulations = 100000
+chi2_sim = do(num_simulations)*{
+  simulated_counts = rmultinom(1, num_people, expected_distribution)
+  this_chi2 = chi_squared_statistic(simulated_counts, num_people*expected_distribution)
+  c(chi2 = this_chi2) # return a vector with names and values
+}
+
+#create graph of chi_sq values
+ggplot(chi2_sim) + 
+  geom_histogram(aes(x=chi2), binwidth=1) + 
+  labs(title="Plot of chi squared distribution of the test statistic, assuming that the null \nhypothesis is true",
+       x="Simulated test statistcs chi squared values")
+
+# my crazy bag
+my_chi2 = chi_squared_statistic(observed_counts, num_people*expected_distribution)
+
+# p value?
+p_value = sum(chi2_sim >= my_chi2)/100000
+```
+
+## p-value:
+
+The chi squared for the test statistic of 240 people on the 20 juries under the judge in question, 85 were from group 1, 56 were from group 2, 59 were from group 3, 27 were from group 4, and 13 were from group 5 is `r my_chi2`. This means that the p-value is `r p_value` where that is the probability that the simulated chi squared value is greater than or equal to the chi squared of the test statistic, `r my_chi2`.
+
+## Conclusion:
+
+Since the p-value is less than 0.05 and greater than 0.01, the probability that the test statistic will happen under the null hypothesis is small but not unlikely, which means that the null hypothesis could be true or false, and should be investigated further with more data. The p-value does suggest that the jury selection of this judge is less likely to occur under the null hypothesis, and could point to systematic bias in jury selection. However, possible explanations exist other than systematic bias, such as economic disparities that prevent a group from taking off work for long trials, exclusion of non-citizens or non-English speakers, voter registration differing between groups, and much more. The bias could be further investigated by looking into other judges in the same area to see if a county bias, or looking into economic and social aspects of the groups that could affect likeliness to serve on a jury to name a few.
+
+# Problem 4 - LLM watermarking
+
+## Part A: the null or reference distribution
+
+```{r, echo=FALSE, warning = FALSE}
+#import data
+sentences <- readLines("brown_sentences.txt")
+
+calculate_observed_frequency <- function(sentence) {
+  # Convert the sentence to uppercase and remove non-letter characters
+  sentence <- gsub("[^a-zA-Z]", "", sentence)  # Remove non-letters
+  sentence <- toupper(sentence)  # Convert to uppercase
+  
+  # Create a frequency table of all characters in the sentence
+  char_table <- table(strsplit(sentence, NULL)[[1]])  # Split sentence into individual characters
+  
+  # Make sure we only have counts for valid letters (A to Z)
+  valid_letters <- LETTERS  # Letters from 'a' to 'z'
+  
+  # Initialize a vector of zeros for all valid letters
+  observed_counts <- rep(0, 26)
+  names(observed_counts) <- valid_letters  # Assign names as 'a' to 'z'
+  
+  # Match the character counts in the table to the valid letters vector
+  observed_counts[names(char_table)] <- char_table[names(char_table)]
+  
+  return(observed_counts)
+}
+# Calculate letter frequencies for all sentences
+observed_counts_list <- lapply(sentences, calculate_observed_frequency)
+
+letter_frequencies <- read.csv("letter_frequencies.csv")
+
+calculate_expected_frequency = function(sentence, freq_table) {
+  # Ensure letter frequencies are normalized and sum to 1
+  freq_table$Probability = freq_table$Probability / sum(freq_table$Probability)
+  
+  # Remove non-letters and convert to uppercase
+  clean_sentence = gsub("[^A-Za-z]", "", sentence)
+  clean_sentence = toupper(clean_sentence)
+  
+  # Calculate expected counts
+  total_letters = nchar(clean_sentence)
+  expected_counts <- rep(0, 26)
+  names(expected_counts) <- LETTERS  # Assign names as 'A' to 'Z'
+  
+  # Calculate expected counts based on letter frequency distribution
+  for (letter in LETTERS) {
+    # Get the probability for the current letter
+    prob <- freq_table$Probability[freq_table$Letter == letter]
+    # Calculate the expected count for the letter
+    expected_counts[letter] <- total_letters * prob
+  }
+  
+  return(expected_counts)
+}
+
+expected_counts_list <- lapply(sentences, calculate_expected_frequency, freq_table = letter_frequencies)
+  
+  # Chi-squared statistic
+calculate_chisq_stat <- function(observed_counts, expected_counts) {
+  # Ensure that the observed and expected counts are in the same order
+  observed_counts <- observed_counts[match(names(expected_counts), names(observed_counts))]
+  
+  # Compute the chi-squared statistic
+  chisq_stat <- sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chisq_stat)
+}
+
+# Calculate chi-squared statistics for all sentences
+chisq_stats <- mapply(calculate_chisq_stat, observed_counts_list, expected_counts_list)
+
+# Create a null distribution (just using all chi-squared stats from normal sentences)
+null_distribution <- chisq_stats
+
+# graph distribution
+watermark <- data.frame(ChiSquared = chisq_stats)
+
+# Create a histogram of the chi-squared distribution
+ggplot(watermark) +
+  geom_histogram(aes(x = ChiSquared), binswidth = 1) +
+  labs(title = "Chi-Squared Distribution of Sentences",
+       x = "Chi-Squared Statistic")
+```
+
+# Part B: checking for a watermark
+
+```{r, echo=FALSE}
+# The 10 sentences to check for a watermark
+sentences_to_check <- c("She opened the book and started to read the first chapter, eagerly anticipating what might come next.","Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.","The museum’s new exhibit features ancient artifacts from various civilizations around the world.","He carefully examined the document, looking for any clues that might help solve the mystery.","The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.","Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.","The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.","They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.","The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.","Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations.")
+
+calculate_p_value <- function(chisq_stat, df) {
+  p_value <- 1 - pchisq(chisq_stat, df)
+  return(p_value)
+}
+
+# Calculate letter counts for these sentences
+observed_counts_check <- lapply(sentences_to_check, calculate_observed_frequency)
+
+# Calculate expected counts for these sentences
+expected_counts_check <- lapply(sentences_to_check, calculate_expected_frequency, freq_table = letter_frequencies)
+
+# Calculate chi-squared statistics for these sentences
+chisq_stats_check <- mapply(calculate_chisq_stat, observed_counts_check, expected_counts_check)
+
+p_values <- sapply(chisq_stats_check, calculate_p_value, df = 25)
+
+# Create a table of sentences and p-values
+p_values_table <- data.frame(Sentence = sentences_to_check, p_value = round(p_values, 3))
+
+knitr::kable(p_values_table, format = "markdown", col.names = c("Sentence", "P-value"))
+```
+
+## Conclusion:
+Sentence 6 appears to have the most significant deviation from the expected letter distribution because it has the lowest p-value, which is 0.000. The p-value indicates that it's been generated or altered in a way that doesn't reflect typical English frequency distribution of letters, meaing it could be the watermarked LLM sentence.
